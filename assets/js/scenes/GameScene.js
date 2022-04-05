@@ -10,7 +10,7 @@ gameScene.preload = function() {
 	//load images (label, location)
 	this.load.image('baseTiles', 'assets/images/background.png'); //tiles
 	this.load.tilemapTiledJSON('map', 'assets/images/WorldMap1.json'); //json from Tiled
-	this.load.image('enemy', 'assets/images/dragon.png'); //Enemy
+	this.load.spritesheet('enemy', 'assets/images/enemySprite-walk.png', { frameWidth: 73, frameHeight: 92 }); //Enemy
 	this.load.spritesheet('mainPlayer', 'assets/images/Character/mainPlayer.png', { frameWidth: 24, frameHeight: 24 });
 };
 
@@ -30,9 +30,11 @@ gameScene.create = function() {
 
 	//player sprite -- add with physics to allow input from keyboard
 	this.mainPlayer = this.physics.add.sprite(150, 1750, 'mainPlayer');
+	this.enemy = this.physics.add.sprite(500, 1750, 'enemy');
 
 	//this.mainPlayer = gameScene.add.sprite(150, 1750, 'mainPlayer');
 	this.mainPlayer.setScale(1.2);
+	this.enemy.setScale(0.4);
 
 	//mainPlayer walking animation
 	this.anims.create({
@@ -43,21 +45,27 @@ gameScene.create = function() {
 		repeat: -1
 	});
 
+	this.anims.create({
+		key: 'enemyWalk',
+		frames: this.anims.generateFrameNames('enemy', { frames: [ 1, 2, 3, 4, 5, 6 ] }),
+		frameRate: 10,
+		yoyo: true,
+		repeat: -1
+	});
+
 	//sets player on top of background
 	this.mainPlayer.depth = 1;
-
-	//enemy sprite
-	this.enemy = this.add.sprite(500, 1750, 'enemy');
-	this.enemy.setScale(1);
 
 	//rotate sprite
 	this.enemy.flipX = true;
 
 	//set edges of world
 	this.mainPlayer.setCollideWorldBounds(true);
+	this.enemy.setCollideWorldBounds(true);
 
 	//prevent player from access blocked areas (ex. water)
 	this.physics.add.collider(this.mainPlayer, this.water);
+	this.physics.add.collider(this.mainPlayer, this.enemy);
 
 	this.cursors = this.input.keyboard.createCursorKeys();
 };
@@ -72,11 +80,13 @@ gameScene.update = function() {
 		this.mainPlayer.setVelocityY(-this.mainPlayerSpeed);
 		if (!this.mainPlayer.anims.isPlaying) {
 			this.mainPlayer.play('walk');
+			//this.enemy.play('enemyWalk');
 		}
 	} else if (this.cursors.down.isDown == true) {
 		this.mainPlayer.setVelocityY(this.mainPlayerSpeed);
 		if (!this.mainPlayer.anims.isPlaying) {
 			this.mainPlayer.play('walk');
+			//this.enemy.play('enemyWalk');
 		}
 	} else if (this.cursors.right.isDown == true) {
 		this.mainPlayer.setVelocityX(this.mainPlayerSpeed);
@@ -84,6 +94,7 @@ gameScene.update = function() {
 		this.mainPlayer.flipX = false;
 		if (!this.mainPlayer.anims.isPlaying) {
 			this.mainPlayer.play('walk');
+			//this.enemy.play('enemyWalk');
 		}
 	} else if (this.cursors.left.isDown == true) {
 		this.mainPlayer.setVelocityX(-this.mainPlayerSpeed);
@@ -95,7 +106,13 @@ gameScene.update = function() {
 	} else {
 		this.mainPlayer.anims.stop('walk');
 		this.mainPlayer.setFrame(0);
+
+		//this.enemy.anims.stop('enemyWalk');
+		this.enemy.setFrame(4);
+		this.enemy.play('enemyWalk');
 	}
+
+	this.physics.moveToObject(this.enemy, this.mainPlayer);
 
 	//sets camera to follow player
 	this.cameras.main.centerOn(this.mainPlayer.x, this.mainPlayer.y);
