@@ -80,13 +80,11 @@ gameScene.update = function() {
 		this.mainPlayer.setVelocityY(-this.mainPlayerSpeed);
 		if (!this.mainPlayer.anims.isPlaying) {
 			this.mainPlayer.play('walk');
-			//this.enemy.play('enemyWalk');
 		}
 	} else if (this.cursors.down.isDown == true) {
 		this.mainPlayer.setVelocityY(this.mainPlayerSpeed);
 		if (!this.mainPlayer.anims.isPlaying) {
 			this.mainPlayer.play('walk');
-			//this.enemy.play('enemyWalk');
 		}
 	} else if (this.cursors.right.isDown == true) {
 		this.mainPlayer.setVelocityX(this.mainPlayerSpeed);
@@ -94,7 +92,6 @@ gameScene.update = function() {
 		this.mainPlayer.flipX = false;
 		if (!this.mainPlayer.anims.isPlaying) {
 			this.mainPlayer.play('walk');
-			//this.enemy.play('enemyWalk');
 		}
 	} else if (this.cursors.left.isDown == true) {
 		this.mainPlayer.setVelocityX(-this.mainPlayerSpeed);
@@ -107,7 +104,6 @@ gameScene.update = function() {
 		this.mainPlayer.anims.stop('walk');
 		this.mainPlayer.setFrame(0);
 
-		//this.enemy.anims.stop('enemyWalk');
 		this.enemy.setFrame(4);
 		this.enemy.play('enemyWalk');
 	}
