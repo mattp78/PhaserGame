@@ -72,6 +72,7 @@ gameScene.create = function() {
 	this.physics.add.collider(this.enemy, this.water);
 
 	this.cursors = this.input.keyboard.createCursorKeys();
+
 	// console.log(Phaser.Math.distance(this.mainPlayer.x, this.mainPlayer.y, this.enemy.x, this.enemy.y));
 	this.enemy.setFrame(4);
 	this.enemy.play('enemyWalk');
