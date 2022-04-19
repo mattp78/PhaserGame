@@ -9,7 +9,7 @@ gameScene.init = function() {
 gameScene.preload = function() {
 	//load images (label, location)
 	this.load.image('baseTiles', 'assets/images/background.png'); //tiles
-	this.load.tilemapTiledJSON('map', 'assets/images/WorldMap1.json'); //json from Tiled
+	this.load.tilemapTiledJSON('map', 'assets/images/WorldMap1-2.json'); //json from Tiled
 	this.load.spritesheet('enemy', 'assets/images/enemySprite-walk.png', { frameWidth: 73, frameHeight: 92 }); //Enemy
 	this.load.spritesheet('mainPlayer', 'assets/images/Character/mainPlayer.png', { frameWidth: 24, frameHeight: 24 });
 };
@@ -56,8 +56,10 @@ gameScene.create = function() {
 	//sets player on top of background
 	this.mainPlayer.depth = 1;
 
+	//throw knives
+
 	//rotate sprite
-	this.enemy.flipX = true;
+	//this.enemy.flipX = true;
 
 	//set edges of world
 	this.mainPlayer.setCollideWorldBounds(true);
@@ -66,8 +68,13 @@ gameScene.create = function() {
 	//prevent player from access blocked areas (ex. water)
 	this.physics.add.collider(this.mainPlayer, this.water);
 	this.physics.add.collider(this.mainPlayer, this.enemy);
+	this.physics.add.collider(this.enemy, this.mainPlayer);
+	this.physics.add.collider(this.enemy, this.water);
 
 	this.cursors = this.input.keyboard.createCursorKeys();
+	// console.log(Phaser.Math.distance(this.mainPlayer.x, this.mainPlayer.y, this.enemy.x, this.enemy.y));
+	this.enemy.setFrame(4);
+	this.enemy.play('enemyWalk');
 };
 
 gameScene.update = function() {
@@ -103,11 +110,13 @@ gameScene.update = function() {
 	} else {
 		this.mainPlayer.anims.stop('walk');
 		this.mainPlayer.setFrame(0);
-
-		this.enemy.setFrame(4);
-		this.enemy.play('enemyWalk');
 	}
 
+	if (this.mainPlayer.x - this.enemy.x < 0) {
+		this.enemy.flipX = true;
+	} else {
+		this.enemy.flipX = false;
+	}
 	this.physics.moveToObject(this.enemy, this.mainPlayer);
 
 	//sets camera to follow player
@@ -117,6 +126,10 @@ gameScene.update = function() {
 	//get player and enemy area
 	let playerArea = this.mainPlayer.getBounds();
 	let enemyArea = this.enemy.getBounds();
+
+	if (this.mainPlayer.body.touching.right) {
+		this.scene.restart();
+	}
 
 	if (Phaser.Geom.Intersects.RectangleToRectangle(playerArea, enemyArea)) {
 		//restart game if player overlaps enemy
