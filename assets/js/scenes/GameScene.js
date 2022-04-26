@@ -7,6 +7,35 @@ gameScene.init = function() {
 
 //load in assets
 gameScene.preload = function() {
+	//loading screen
+	let progressBar = this.add.graphics();
+	let progressBox = this.add.graphics();
+	progressBox.fillStyle(0x222222, 0.8);
+	progressBox.fillRect(240, 270, 320, 50);
+
+	this.load.image('logo', 'assets/images/logo.png');
+	for (var i = 0; i < 500; i++) {
+		this.load.image('logo' + i, 'logo.png');
+	}
+
+	this.load.on('progress', function(value) {
+		console.log(value);
+	});
+
+	this.load.on('fileprogress', function(file) {
+		console.log(file.src);
+	});
+	this.load.on('complete', function() {
+		console.log('complete');
+	});
+
+	this.load.on('progress', function(value) {
+		console.log(value);
+		progressBar.clear();
+		progressBar.fillStyle(0xffffff, 1);
+		progressBar.fillRect(250, 280, 300 * value, 30);
+	});
+
 	//load images (label, location)
 	this.load.image('baseTiles', 'assets/images/background.png'); //tiles
 	this.load.tilemapTiledJSON('map', 'assets/images/WorldMap1-2.json'); //json from Tiled
@@ -15,6 +44,9 @@ gameScene.preload = function() {
 };
 
 gameScene.create = function() {
+	//loading screen
+	let logo = this.add.image(400, 300, 'logo');
+
 	//add in tiled map, tileset, layers
 	this.map = this.make.tilemap({ key: 'map' }); //create map: key matches name given in preload
 	const tileset = this.map.addTilesetImage('background', 'baseTiles', 32, 32); //add tilset image: name of tileset used in tiled, key of image in preload, tilewidth, tileheight
