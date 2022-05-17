@@ -3,72 +3,64 @@ let gameScene = new Phaser.Scene('Game');
 
 gameScene.init = function() {
 	this.mainPlayerSpeed = 150;
+	this.coinScore = 0;
+	this.scoreText;
 };
 
 //load in assets
 gameScene.preload = function() {
-	//loading screen
-	let progressBar = this.add.graphics();
-	let progressBox = this.add.graphics();
-	progressBox.fillStyle(0x222222, 0.8);
-	progressBox.fillRect(240, 270, 320, 50);
-
-	this.load.image('logo', 'assets/images/logo.png');
-	for (var i = 0; i < 500; i++) {
-		this.load.image('logo' + i, 'logo.png');
-	}
-
-	this.load.on('progress', function(value) {
-		console.log(value);
-	});
-
-	this.load.on('fileprogress', function(file) {
-		console.log(file.src);
-	});
-	this.load.on('complete', function() {
-		console.log('complete');
-	});
-
-	this.load.on('progress', function(value) {
-		console.log(value);
-		progressBar.clear();
-		progressBar.fillStyle(0xffffff, 1);
-		progressBar.fillRect(250, 280, 300 * value, 30);
-	});
-
 	//load images (label, location)
 	this.load.image('baseTiles', 'assets/images/background.png'); //tiles
 	this.load.tilemapTiledJSON('map', 'assets/images/WorldMap1-2.json'); //json from Tiled
 	this.load.spritesheet('enemy', 'assets/images/enemySprite-walk.png', { frameWidth: 73, frameHeight: 92 }); //Enemy
-	this.load.spritesheet('mainPlayer', 'assets/images/Character/mainPlayer.png', { frameWidth: 24, frameHeight: 24 });
+	this.load.spritesheet('mainPlayer', 'assets/images/Character/mainPlayer.png', {
+		frameWidth: 24,
+		frameHeight: 24
+	});
+	this.load.spritesheet('coin', 'assets/images/coin.png', { frameWidth: 16, frameHeight: 16 });
+
+	this.coinScore = 0;
+	this.scoreText;
 };
 
 gameScene.create = function() {
-	//loading screen
-	let logo = this.add.image(400, 300, 'logo');
-
-	//add in tiled map, tileset, layers
+	//tiled map, tileset, layers
 	this.map = this.make.tilemap({ key: 'map' }); //create map: key matches name given in preload
 	const tileset = this.map.addTilesetImage('background', 'baseTiles', 32, 32); //add tilset image: name of tileset used in tiled, key of image in preload, tilewidth, tileheight
-	const level = this.map.createStaticLayer('Tile Layer 1', tileset, 0, 0); //name of tile layer, tileset used, x&y position
-	this.water = this.map.createStaticLayer('water', tileset, 0, 0);
+	const level = this.map.createDynamicLayer('Tile Layer 1', tileset, 0, 0); //name of tile layer, tileset used, x&y position
+	this.water = this.map.createDynamicLayer('water', tileset, 0, 0);
 	this.map.x = this.map.displayWidth;
 	this.map.y = this.map.displayHeight;
 	this.water.setCollisionByExclusion([ -1 ]);
+
+	//coins
+	this.CoinLayer = this.map.getObjectLayer('coins')['objects'];
+	coins = this.physics.add.staticGroup();
+	this.CoinLayer.forEach((object) => {
+		let obj = coins.create(object.x, object.y, 'coin');
+		obj.setScale(object.width / 16, object.height / 16);
+		obj.setOrigin(0);
+		obj.body.width = object.width;
+		obj.body.height = object.height;
+	});
+
+	//sprites -- add with physics to allow input from keyboard
+	this.mainPlayer = this.physics.add.sprite(150, 1750, 'mainPlayer');
+	this.enemy = this.physics.add.sprite(500, 1750, 'enemy');
+
+	//collisons
+	this.physics.add.overlap(this.mainPlayer, coins, collectCoin, null, this);
+	this.physics.add.overlap(this.mainPlayer, this.enemy, enemyOverlap, null, this);
 
 	//prevents player from moving off map
 	this.physics.world.bounds.width = this.map.widthInPixles;
 	this.physics.world.bounds.height = this.map.heightInPixles;
 
-	//player sprite -- add with physics to allow input from keyboard
-	this.mainPlayer = this.physics.add.sprite(150, 1750, 'mainPlayer');
-	this.enemy = this.physics.add.sprite(500, 1750, 'enemy');
-
-	//this.mainPlayer = gameScene.add.sprite(150, 1750, 'mainPlayer');
+	//set sprite sizes
 	this.mainPlayer.setScale(1.2);
 	this.enemy.setScale(0.4);
 
-	//mainPlayer walking animation
+	//walking animations
 	this.anims.create({
 		key: 'walk',
 		frames: this.anims.generateFrameNames('mainPlayer', { frames: [ 1, 2, 3, 4, 5, 6 ] }),
@@ -88,10 +80,7 @@ gameScene.create = function() {
 	//sets player on top of background
 	this.mainPlayer.depth = 1;
 
-	//throw knives
-
-	//rotate sprite
-	//this.enemy.flipX = true;
+	this.scoreText = gameScene.add.text(0, 0, `score: ` + this.coinScore, { fontSize: '18px', fill: '#000000' });
 
 	//set edges of world
 	this.mainPlayer.setCollideWorldBounds(true);
@@ -103,14 +92,30 @@ gameScene.create = function() {
 	this.physics.add.collider(this.enemy, this.mainPlayer);
 	this.physics.add.collider(this.enemy, this.water);
 
+	//get keyboard input for movement
 	this.cursors = this.input.keyboard.createCursorKeys();
 
-	// console.log(Phaser.Math.distance(this.mainPlayer.x, this.mainPlayer.y, this.enemy.x, this.enemy.y));
 	this.enemy.setFrame(4);
 	this.enemy.play('enemyWalk');
+	this.scoreText.setScrollFactor(0, 0);
+	this.scoreText.fixedToCamera = true;
 };
 
+function collectCoin(player, coin) {
+	coin.destroy(coin.x, coin.y); // remove the tile/coin
+	this.mainPlayerSpeed += 10;
+	this.coinScore++;
+	console.log(this.coinScore);
+}
+
+function enemyOverlap(player, enemy) {
+	this.scene.restart();
+	return false;
+}
+
 gameScene.update = function() {
+	this.scoreText = (gameScene, 0, 0, `score: ${this.coinScore}`);
+
 	//stops player from moving
 	this.mainPlayer.setVelocityX(0);
 	this.mainPlayer.setVelocityY(0);
@@ -145,29 +150,19 @@ gameScene.update = function() {
 		this.mainPlayer.setFrame(0);
 	}
 
+	//flip enemy to face player
 	if (this.mainPlayer.x - this.enemy.x < 0) {
 		this.enemy.flipX = true;
 	} else {
 		this.enemy.flipX = false;
 	}
+
+	//moves enemy toward player
 	this.physics.moveToObject(this.enemy, this.mainPlayer);
 
 	//sets camera to follow player
 	this.cameras.main.centerOn(this.mainPlayer.x, this.mainPlayer.y);
 	this.cameras.main.setBounds(0, 0, this.map.widthInPixles, this.map.heightInPixles);
-
-	//get player and enemy area
-	let playerArea = this.mainPlayer.getBounds();
-	let enemyArea = this.enemy.getBounds();
-
-	if (this.mainPlayer.body.touching.right) {
-		this.scene.restart();
-	}
-
-	if (Phaser.Geom.Intersects.RectangleToRectangle(playerArea, enemyArea)) {
-		//restart game if player overlaps enemy
-		this.scene.restart();
-	}
 };
 
 let config = {
@@ -182,7 +177,8 @@ let config = {
 		}
 	},
 	pixelArt: true,
-	roundPixels: true
+	roundPixels: true,
+	title: 'My Final Project'
 };
 
 // create the game and pass in the configuration
